@@ -1,0 +1,55 @@
+services:
+  # Demo website the audience opens. Every request becomes one JSON line
+  # in ./logs/access.log (method, path, status, client IP, user agent).
+  webapp:
+    build: ./webapp
+    ports:
+      - "8080:5000"
+    volumes:
+      - ./logs:/var/log/webapp
+    restart: unless-stopped
+
+  # Loki stores and indexes the logs. Reachable from this computer only:
+  # it has no login, so it must not be open to the Wi-Fi.
+  loki:
+    image: grafana/loki:3.1.1
+    command: -config.file=/etc/loki/loki-config.yml
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+      - lokidata:/loki
+    restart: unless-stopped
+
+  # Promtail reads ./logs/access.log and sends each new line to Loki.
+  promtail:
+    image: grafana/promtail:3.1.1
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - ./logs:/var/log/webapp:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  # Grafana shows the dashboard. Reachable from this computer only.
+  # The Loki data source and the dashboard are loaded automatically.
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=change-me-before-the-demo
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+volumes:
+  lokidata:
+  grafanadata:

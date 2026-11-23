@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo App — Monitoring Lab</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:24px; }
+    .wrap { max-width:720px; margin:0 auto; }
+    h1 { font-size:22px; }
+    p.sub { color:#94a3b8; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin:20px 0; }
+    button { padding:14px; border:0; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; color:#fff; }
+    .get{background:#2563eb;} .post{background:#16a34a;} .put{background:#d97706;} .del{background:#dc2626;}
+    .admin{background:#7c3aed;} .notfound{background:#475569;}
+    form { background:#1e293b; padding:16px; border-radius:10px; margin:16px 0; }
+    input { width:100%; padding:10px; margin:6px 0 12px; border-radius:8px; border:1px solid #334155; background:#0f172a; color:#e2e8f0; }
+    #out { background:#020617; border:1px solid #1e293b; border-radius:10px; padding:14px; font-family:ui-monospace,Consolas,monospace; font-size:13px; min-height:60px; white-space:pre-wrap; }
+    .note{ color:#64748b; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🔎 Monitoring Lab — Demo App</h1>
+    <p class="sub">Tap the buttons. Every request you send appears <b>live</b> on the presenter's Grafana dashboard: method, path, IP address and browser.</p>
+
+    <div class="grid">
+      <button class="get"  onclick="hit('GET','/api/resource')">GET</button>
+      <button class="post" onclick="hit('POST','/api/resource',{demo:true})">POST</button>
+      <button class="put"  onclick="hit('PUT','/api/resource',{demo:true})">PUT</button>
+      <button class="del"  onclick="hit('DELETE','/api/resource')">DELETE</button>
+      <button class="admin" onclick="hit('GET','/admin')">GET /admin</button>
+      <button class="notfound" onclick="hit('GET','/does-not-exist')">404</button>
+    </div>
+
+    <form onsubmit="event.preventDefault(); login();">
+      <label>Username <input name="u" placeholder="username" autocomplete="off"></label>
+      <label>Password <input name="p" type="password" placeholder="password" autocomplete="off"></label>
+      <button class="post" type="submit">Log in (POST /login)</button>
+      <div class="note">Practice login. Nothing you type here is sent: only the login request itself shows on the dashboard.</div>
+    </form>
+
+    <h3>Response</h3>
+    <div id="out">—</div>
+  </div>
+
+  <script>
+    async function hit(method, path, body) {
+      const opts = { method, headers: {} };
+      if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+      const t0 = performance.now();
+      try {
+        const r = await fetch(path, opts);
+        const txt = await r.text();
+        out.textContent = `${method} ${path} → ${r.status} (${Math.round(performance.now()-t0)}ms)\n${txt}`;
+      } catch (e) { out.textContent = 'error: ' + e; }
+    }
+    // Practice login: what is typed is never sent, only an empty POST /login.
+    async function login() {
+      hit('POST', '/login');
+    }
+    const out = document.getElementById('out');
+  </script>
+</body>
+</html>

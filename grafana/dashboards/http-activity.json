@@ -1,0 +1,171 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["demo", "security", "http"],
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "HTTP Activity Monitor",
+  "uid": "http-activity-demo",
+  "version": 1,
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Total requests (window)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"webapp\"} [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+    },
+    {
+      "type": "stat",
+      "title": "4xx/5xx errors (window)",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"webapp\"} | json | status >= 400 [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } } },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none" }
+    },
+    {
+      "type": "stat",
+      "title": "Unique source IPs (window)",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(sum by (ip) (count_over_time({job=\"webapp\"} | json [$__range])))",
+          "queryType": "instant"
+        }
+      ],
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none" }
+    },
+    {
+      "type": "piechart",
+      "title": "Requests by method",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (method) (count_over_time({job=\"webapp\"} [$__range]))",
+          "queryType": "instant",
+          "legendFormat": "{{method}}"
+        }
+      ],
+      "options": { "legend": { "displayMode": "list", "placement": "right" }, "pieType": "donut" }
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests per method over time",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (method) (count_over_time({job=\"webapp\"} [$__interval]))",
+          "legendFormat": "{{method}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Status codes over time",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (count_over_time({job=\"webapp\"} [$__interval]))",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 60, "stacking": { "mode": "normal" } } } }
+    },
+    {
+      "type": "table",
+      "title": "Top source IPs",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 12 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (ip) (count_over_time({job=\"webapp\"} | json [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        { "id": "labelsToFields", "options": {} },
+        { "id": "organize", "options": { "excludeByName": { "Time": true } } }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Top paths",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 12 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (path) (count_over_time({job=\"webapp\"} | json [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        { "id": "labelsToFields", "options": {} },
+        { "id": "organize", "options": { "excludeByName": { "Time": true } } }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Requests by status",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 12 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (status) (count_over_time({job=\"webapp\"} [$__range]))",
+          "queryType": "instant",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "options": { "legend": { "displayMode": "list", "placement": "right" }, "pieType": "pie" }
+    },
+    {
+      "type": "logs",
+      "title": "Live request stream (raw)",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"webapp\"} | json | line_format \"{{.method}} {{.path}} -> {{.status}}  ip={{.ip}}  ua={{.user_agent}}\""
+        }
+      ],
+      "options": { "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true, "enableLogDetails": true }
+    }
+  ]
+}
